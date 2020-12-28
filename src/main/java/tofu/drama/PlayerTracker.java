@@ -15,7 +15,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.DimensionType;
-import net.minecraft.world.biome.Biome;
+import net.minecraft.world.World;
 
 public class PlayerTracker {
     // concurrentmap?  easier to just skip ifRunning
@@ -52,10 +52,8 @@ public class PlayerTracker {
     // TODO - split this out since if someone leaves or changes dimension we might need to sleep also.  Just catch those in the timer expiry for simplicity
     public void onSleep(ServerPlayerEntity player)
     {
-        // check to see they are in the overworld, and if everyone in the overworld is asleep or afk
-        ResourceLocation location = getLocation(player);
-        
-        if (!location.toString().contains("overworld"))
+        // check to see they are in the overworld, and if everyone in the overworld is asleep or afk        
+        if (!isInOverworld(player))
         {
             Drama.LOGGER.info("PlayerTracker.SLEEP.CHECK: " + player.getScoreboardName() + " not in overworld");
             return;
@@ -109,7 +107,8 @@ public class PlayerTracker {
     private void processPlayer(ServerPlayerEntity player, LocalDateTime now){
         String name = player.getScoreboardName();
         UUID uuid = player.getUniqueID();
-        ResourceLocation location = getLocation(player);
+
+        ResourceLocation location = player.world.getDimensionKey().getLocation();
         
         String message = String.format("%1$s\t[%2$s]\t%3$s\t%4$s\n", now.format(Drama.DATEFORMAT), name, location.toString(), new BlockPos(player.getPosition()));
         try{
@@ -146,15 +145,8 @@ public class PlayerTracker {
         }
     }
 
-
-    // func_233580_cy_ getPosition
-    // Biome biome = player.world.getBiome(new BlockPos(player.func_233580_cy_()));
-
-    private ResourceLocation getLocation(ServerPlayerEntity player)
+    private boolean isInOverworld(ServerPlayerEntity player)
     {
-        DimensionType type = player.world.getDimensionType();
-        ResourceLocation location = type.getEffects();
-
-        return location;
+        return (player.world.getDimensionKey() == World.OVERWORLD);
     }
 }

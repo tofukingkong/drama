@@ -1,8 +1,6 @@
 package tofu.drama.events;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraftforge.event.ServerChatEvent;
