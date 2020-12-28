@@ -91,8 +91,7 @@ public class PlayerTracker {
             Drama.LOGGER.info("PlayerTracker.SLEEP: " + name + " AFK");
         }
 
-        // func_241114_a_ setDayTime()
-        player.getServerWorld().func_241114_a_(24000);
+        player.getServerWorld().setDayTime(24000);
     }
 
     public void onJoin(ServerPlayerEntity player)
@@ -112,7 +111,7 @@ public class PlayerTracker {
         UUID uuid = player.getUniqueID();
         ResourceLocation location = getLocation(player);
         
-        String message = String.format("%1$s\t[%2$s]\t%3$s\t%4$s\n", now.format(Drama.DATEFORMAT), name, location.toString(), getPosition(player));
+        String message = String.format("%1$s\t[%2$s]\t%3$s\t%4$s\n", now.format(Drama.DATEFORMAT), name, location.toString(), new BlockPos(player.getPosition()));
         try{
             Drama.POSITIONLOG.write(message);
         }catch(Exception e){Drama.LOGGER.error("Position File Error: " + e.toString());};
@@ -151,18 +150,10 @@ public class PlayerTracker {
     // func_233580_cy_ getPosition
     // Biome biome = player.world.getBiome(new BlockPos(player.func_233580_cy_()));
 
-    private BlockPos getPosition(ServerPlayerEntity player)
-    {        
-        // func_233580_cy_ getPosition
-        return new BlockPos(player.func_233580_cy_());
-    }
-
     private ResourceLocation getLocation(ServerPlayerEntity player)
     {
-        // func_230315_m_ getDimensionType
-        DimensionType type = player.world.func_230315_m_();
-        // func_242725_p getEffects
-        ResourceLocation location = type.func_242725_p();
+        DimensionType type = player.world.getDimensionType();
+        ResourceLocation location = type.getEffects();
 
         return location;
     }
