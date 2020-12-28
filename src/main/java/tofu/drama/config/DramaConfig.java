@@ -15,16 +15,16 @@ import tofu.drama.Drama;
 public class DramaConfig {
     public static class Common{
         
-		public final IntValue some_int;
+		public final IntValue afkDelay;
 
         public Common(ForgeConfigSpec.Builder builder) {
 			builder.comment("Drama Mod Configurations").push("drama");
 			
-			some_int = builder
-				.comment("Just a test")
-				.translation("drama.configgui.some_int")
+			afkDelay = builder
+				.comment("Duration (seconds) with no movement before a player is considered AFK")
+				.translation("drama.configgui.afk_delay")
 				.worldRestart()
-				.defineInRange("some_int", 3, 3, 5);
+				.defineInRange("afk_delay", 10, 1, 3600);
 
 			builder.pop();
         }
@@ -38,10 +38,11 @@ public class DramaConfig {
 		COMMON = specPair.getLeft();
 	}
 
-    @SubscribeEvent
-	public static void onLoad(final ModConfig.Loading event) {
-		Drama.LOGGER.info("zzz CONFIG ONLOAD");
-	}
+    //@SubscribeEvent
+	//public static void onLoad(final ModConfig.Loading event)
+	//{
+
+	//}
 	
 	// @SubscribeEvent
 	// public static void onFileChange(final ModConfig.ConfigReloading event) {

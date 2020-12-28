@@ -1,6 +1,5 @@
 package tofu.drama;
 
-import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -14,8 +13,11 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.MessageFormat;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 import org.apache.logging.log4j.LogManager;
@@ -33,10 +35,9 @@ public class Drama {
     public static BufferedWriter CHATLOG;
     public static BufferedWriter POSITIONLOG;
 
-    private MinecraftServer _server = null;
     public static PlayerTracker _tracker = null;
     
-    public Drama() throws IOException {
+    public Drama() {
       ModLoadingContext.get().registerConfig(Type.SERVER, DramaConfig.COMMON_SPEC, "drama-server.toml");
       FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
       FMLJavaModLoadingContext.get().getModEventBus().addListener(this::config);
@@ -44,23 +45,45 @@ public class Drama {
       //MinecraftForge.EVENT_BUS.register(ModPlayerEvents.class);        
       MinecraftForge.EVENT_BUS.register(ModServerEvents.class);
       MinecraftForge.EVENT_BUS.register(this);
-      
-      CHATLOG = new BufferedWriter(new FileWriter("c:\\mc\\chat.txt", true));
-      POSITIONLOG = new BufferedWriter(new FileWriter("c:\\mc\\pos.txt", true));
     }
 
     @SubscribeEvent
-    public void setup(FMLCommonSetupEvent event) 
-    {    
-      LOGGER.info("Drama.SETUP");
+    public void setup(FMLCommonSetupEvent event)
+    {
+        LOGGER.info("Drama.SETUP");
+
+        String chatFile = ".\\logs\\chat.txt";
+        String posFile = ".\\logs\\pos.txt";
+
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("yyMMdd.HHmmss");
+        String formattedTime = LocalDateTime.now().format(format);
+        File file = new File(chatFile);
+        if(file.exists()) {
+            boolean result = file.renameTo(new File(MessageFormat.format(".\\logs\\chat.{0}.txt", formattedTime)));
+            if (!result){
+                LOGGER.warn("Couldn't rename chat.txt");
+            }
+        }
+
+        file = new File(posFile);
+        if(file.exists()) {
+            boolean result = file.renameTo(new File(MessageFormat.format(".\\logs\\pos.{0}.txt", formattedTime)));
+            LOGGER.warn("Couldn't rename pos.txt");
+        }
+
+        try {
+            CHATLOG = new BufferedWriter(new FileWriter(chatFile, true));
+            POSITIONLOG = new BufferedWriter(new FileWriter(posFile, true));
+        }catch(Exception e) {
+            LOGGER.error("Failed to set up chatlog or positionlog", e);
+        }
     }
 
     @SubscribeEvent
     public void config(ModConfigEvent event) 
     { 
       LOGGER.info("Drama.CONFIG");
-      ModConfig config = event.getConfig();
-      LOGGER.info("zzz CONFIG IN : " + config.getFullPath());
     }
 
     @SubscribeEvent
@@ -69,20 +92,16 @@ public class Drama {
       LOGGER.info("Drama.STOPPING");
       try
       {
-        if (POSITIONLOG != null) POSITIONLOG.flush();
-        if (CHATLOG != null) CHATLOG.flush();
-      }catch(IOException e)
-      {
-        Drama.LOGGER.error("CHAT OR POSITION LOG failure to flush : %1s", e);
+        if (POSITIONLOG != null) {POSITIONLOG.flush();POSITIONLOG.close();}
+        if (CHATLOG != null) {CHATLOG.flush();CHATLOG.close();}
+      }catch(IOException e) {
+        Drama.LOGGER.error("CHAT OR POSITION LOG failure to flush or close", e);
       }
     }
 
     @SubscribeEvent
-    public void starting(FMLServerStartedEvent event)
-    {
-      LOGGER.info("Drama.STARTED " + event.getPhase());
-      _server = event.getServer();
-      _tracker = new PlayerTracker(_server);
-      _tracker.start();
+    public void starting(FMLServerStartedEvent event) {
+        LOGGER.info("Drama.STARTED");
+        _tracker = new PlayerTracker(event.getServer(), DramaConfig.COMMON.afkDelay.get());
     }
 }
