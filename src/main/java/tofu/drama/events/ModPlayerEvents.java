@@ -78,7 +78,7 @@ public class ModPlayerEvents {
         _tickCount++;
 
         if (_tickCount % _trackingTick == 0) {
-            Drama._tracker.trackPlayer((ServerPlayerEntity)event.player);
+            Drama._tracker.trackPlayer((ServerPlayerEntity)event.player, _tickCount % _trackingFlush == 0);
         }
 
         if (_tickCount % _afkTick == 0) {
@@ -87,6 +87,7 @@ public class ModPlayerEvents {
     }
 
     private static long _tickCount = 0;
-    private static final long _trackingTick = 20 * 15; // 15sec
+    private static final long _trackingTick = 20 * 20; // 20sec
+    private static final long _trackingFlush = 20 * 60; // 60sec
     private static final long _afkTick = 20 * 10; // 10sec
 }

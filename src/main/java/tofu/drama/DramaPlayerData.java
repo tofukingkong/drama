@@ -12,6 +12,8 @@ public class DramaPlayerData {
     public LocalDateTime lastMove;
     public LocalDateTime lastSeen;
     public boolean isAfk;
+    public FileManager.ManagedFile tracker;
+
 
     public DramaPlayerData(UUID id, String name, double x, double y, double z) {
         uuid = id;
@@ -22,5 +24,13 @@ public class DramaPlayerData {
         lastMove = LocalDateTime.now();
         lastSeen = lastMove;
         isAfk = false;
+        tracker = null;
+    }
+
+    public void reset() {
+        lastMove = LocalDateTime.now();
+        lastSeen = lastMove;
+        isAfk = false;
+        tracker = null;
     }
 }

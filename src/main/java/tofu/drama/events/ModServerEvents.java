@@ -24,11 +24,7 @@ public class ModServerEvents {
 
     @SubscribeEvent
     public static void onEvent(ServerChatEvent event) {
-        LocalDateTime now = LocalDateTime.now();
-        String message = MessageFormat.format("{0}\t{1}\t{2}\n", now.format(Drama.DATEFORMAT), event.getUsername(), event.getMessage());
-try{
-        Drama.CHATLOG.write(message);
-}catch(Exception e){Drama.LOGGER.error(MessageFormat.format("Chatlog File Error: {0}", e.toString()));}
+        Drama.CHATLOG.write("{0}\t{1}", event.getUsername(), event.getMessage());
     }
 
 
@@ -70,12 +66,7 @@ try{
         }
 
         if (_tickCount % _flushTick == 0) {
-            try {
-                Drama.CHATLOG.flush();
-                Drama.POSITIONLOG.flush();
-            } catch (Exception e) {
-                Drama.LOGGER.error(MessageFormat.format("Failed to flush chat or position log : {0}", e.toString()));
-            }
+            Drama.CHATLOG.flush();
         }
     }
 

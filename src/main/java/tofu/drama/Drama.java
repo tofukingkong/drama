@@ -30,13 +30,12 @@ import tofu.drama.events.ModServerEvents;
 public class Drama {
     public static final String MOD_ID = "drama";
 
-    public static final DateTimeFormatter DATEFORMAT = DateTimeFormatter.ofPattern("yy-MM-dd HH:mm:ss");
     public static final Logger LOGGER = LogManager.getLogger(MOD_ID);
-    public static BufferedWriter CHATLOG;
-    public static BufferedWriter POSITIONLOG;
 
+    public static final FileManager FILE_MANAGER = new FileManager(".");
+    public static FileManager.ManagedFile CHATLOG;
     public static PlayerTracker _tracker = null;
-    
+
     public Drama() {
       ModLoadingContext.get().registerConfig(Type.SERVER, DramaConfig.COMMON_SPEC, "drama-server.toml");
       FMLJavaModLoadingContext.get().getModEventBus().addListener(this::setup);
@@ -45,39 +44,14 @@ public class Drama {
       //MinecraftForge.EVENT_BUS.register(ModPlayerEvents.class);        
       MinecraftForge.EVENT_BUS.register(ModServerEvents.class);
       MinecraftForge.EVENT_BUS.register(this);
+
+      CHATLOG = FILE_MANAGER.manageFile("logs", "chat");
     }
 
     @SubscribeEvent
     public void setup(FMLCommonSetupEvent event)
     {
         LOGGER.info("Drama.SETUP");
-
-        String chatFile = ".\\logs\\chat.txt";
-        String posFile = ".\\logs\\pos.txt";
-
-        LocalDateTime now = LocalDateTime.now();
-        DateTimeFormatter format = DateTimeFormatter.ofPattern("yyMMdd.HHmmss");
-        String formattedTime = LocalDateTime.now().format(format);
-        File file = new File(chatFile);
-        if(file.exists()) {
-            boolean result = file.renameTo(new File(MessageFormat.format(".\\logs\\chat.{0}.txt", formattedTime)));
-            if (!result){
-                LOGGER.warn("Couldn't rename chat.txt");
-            }
-        }
-
-        file = new File(posFile);
-        if(file.exists()) {
-            boolean result = file.renameTo(new File(MessageFormat.format(".\\logs\\pos.{0}.txt", formattedTime)));
-            LOGGER.warn("Couldn't rename pos.txt");
-        }
-
-        try {
-            CHATLOG = new BufferedWriter(new FileWriter(chatFile, true));
-            POSITIONLOG = new BufferedWriter(new FileWriter(posFile, true));
-        }catch(Exception e) {
-            LOGGER.error("Failed to set up chatlog or positionlog", e);
-        }
     }
 
     @SubscribeEvent
@@ -87,21 +61,16 @@ public class Drama {
     }
 
     @SubscribeEvent
-    public void stopping(FMLServerStoppingEvent event)
-    {
-      LOGGER.info("Drama.STOPPING");
-      try
-      {
-        if (POSITIONLOG != null) {POSITIONLOG.flush();POSITIONLOG.close();}
-        if (CHATLOG != null) {CHATLOG.flush();CHATLOG.close();}
-      }catch(IOException e) {
-        Drama.LOGGER.error("CHAT OR POSITION LOG failure to flush or close", e);
-      }
-    }
-
-    @SubscribeEvent
     public void starting(FMLServerStartedEvent event) {
         LOGGER.info("Drama.STARTED");
         _tracker = new PlayerTracker(event.getServer(), DramaConfig.COMMON.afkDelay.get());
+    }
+
+
+    @SubscribeEvent
+    public void stopping(FMLServerStoppingEvent event)
+    {
+        LOGGER.info("Drama.STOPPING");
+        FILE_MANAGER.closeAll();
     }
 }

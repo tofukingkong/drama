@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.sun.org.apache.xpath.internal.functions.FuncSubstringAfter;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.server.ServerWorld;
@@ -29,14 +29,29 @@ public class PlayerTracker {
 
     public void onJoin(ServerPlayerEntity player)
     {
-        Drama.LOGGER.info(MessageFormat.format("PlayerTracker: Adding player {0}",  player.getName().getString()));
-        _playerData.put(player.getUniqueID(), new DramaPlayerData(player.getUniqueID(), player.getName().getString(), player.lastTickPosX, player.lastTickPosY, player.lastTickPosZ));
+        String name = player.getName().getString();
+        Drama.LOGGER.info(MessageFormat.format("PlayerTracker: Adding player {0}", name));
+        UUID id = player.getUniqueID();
+
+        DramaPlayerData data = _playerData.get(id);
+        if (data != null) {
+            data.reset();
+        } else {
+            data = new DramaPlayerData(id, name, player.lastTickPosX, player.lastTickPosY, player.lastTickPosZ);
+        }
+
+        data.tracker = Drama.FILE_MANAGER.manageFile("logs", "u_" + name);
+        _playerData.put(id, data);
+
+       data.tracker.write("JOIN");
     }
 
     public void onLeave(ServerPlayerEntity player)
     {
-        Drama.LOGGER.info(MessageFormat.format("PlayerTracker: Removing player {0}",player.getName().getString()));
-        _playerData.remove(player.getUniqueID());
+        DramaPlayerData data = _playerData.get(player.getUniqueID());
+        if (data != null) {
+            data.tracker.write("LEFT");
+        }
     }
 
     public void trySleepOverride()
@@ -91,29 +106,36 @@ public class PlayerTracker {
 
                 if (data.isAfk)
                 {
-                    Drama.LOGGER.info(MessageFormat.format("PlayerTracker.CHECKAFK: Afk disabled for {0}", data.name));
                     data.isAfk = false;
+                    data.tracker.write("AFK:OFF");
+                    Drama.LOGGER.info(MessageFormat.format("PlayerTracker.CHECKAFK: Afk disabled for {0}", data.name));
                 }
             }
             else if (!data.isAfk && Duration.between(data.lastMove, now).getSeconds() > _afkDelay)
             {
                 data.isAfk = true;
+                data.tracker.write("AFK:ON");
                 Drama.LOGGER.info(MessageFormat.format("PlayerTracker.CHECKAFK: Akf enabled for {0}", data.name));
             }
         }
     }
 
-    public void trackPlayer(ServerPlayerEntity player)
+    public void trackPlayer(ServerPlayerEntity player, boolean forceFlush)
     {
-        LocalDateTime now = LocalDateTime.now();
-        String name = player.getName().getString();
+        BlockPos position = player.getPosition();
 
-        ResourceLocation location = player.world.getDimensionKey().getLocation();
-        String message = MessageFormat.format("{0}\t{1}\t{2}\t{3}\n", now.format(Drama.DATEFORMAT), name, location.toString(), new BlockPos(player.getPosition()));
-        try{
-            Drama.POSITIONLOG.write(message);
-        }catch(Exception e){
-            Drama.LOGGER.error("Position File Error: " + e.toString());
+        String location = player.world.getDimensionKey().getLocation().toString();
+        int pivot = location.indexOf(":");
+        int second = location.indexOf('_', pivot);
+        pivot = second > 0 ? second : pivot;
+        location = location.substring(pivot+1, pivot+4);
+
+        DramaPlayerData data = _playerData.get(player.getUniqueID());
+        if (data != null) {
+            data.tracker.write("LOC:{0}({1},{2},{3})", location, position.getX(), position.getY(), position.getZ());
+            if (forceFlush) {
+                data.tracker.flush();
+            }
         }
     }
 }
