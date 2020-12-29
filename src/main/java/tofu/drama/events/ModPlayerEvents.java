@@ -1,5 +1,9 @@
 package tofu.drama.events;
 
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.container.*;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.LogicalSide;
@@ -17,6 +21,7 @@ import tofu.drama.Drama;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Drama.MOD_ID, bus = Bus.FORGE)
@@ -53,15 +58,6 @@ public class ModPlayerEvents {
         Drama._tracker.onLeave(player);
     }
 
-    public static void onEvent(PlayerEvent event) {
-        if (!event.getPlayer().isServerWorld())
-        {
-            return;
-        }
-        
-        Drama.LOGGER.info("zzz PlayerEvent : " + event.getClass() + "::  " + event.getPlayer() + ":" + event.getPhase() + ":" + (event.hasResult() ? event.getResult() : "NO RESULT"));
-    }
-
     @SubscribeEvent
     public static void onEvent(PlayerContainerEvent event) {
         if (!event.getPlayer().isServerWorld())
@@ -69,7 +65,31 @@ public class ModPlayerEvents {
             return;
         }
 
-        Drama.LOGGER.info("zzz PlayerContainerEvent : " + event.getClass() + "::  " + event.getContainer().getType() + "::" + event.getPlayer());
+        String interaction = event instanceof PlayerContainerEvent.Open ? "OPEN" : "CLOSE";
+
+        Container container = event.getContainer();
+        String containerType = container.getType().getRegistryName().toString();
+
+        // TODO: really prefer to have the pos of the container but not finding it...
+        BlockPos pos = event.getPlayer().getPosition();
+
+        if (container instanceof ChestContainer) {
+            containerType = "CHEST";
+        } else if (container instanceof FurnaceContainer) {
+            containerType = "FURNACE";
+        } else if (container instanceof HopperContainer) {
+            containerType = "HOPPER";
+        }
+
+        int totalItems = 0;
+        for (Slot slot : container.inventorySlots) {
+            ItemStack stack = slot.getStack();
+            if (!stack.isEmpty() && !(slot.inventory instanceof PlayerInventory)) {
+                totalItems += stack.getCount();
+            }
+        }
+
+        Drama._tracker.trackContainerInteraction((ServerPlayerEntity)event.getPlayer(), containerType, interaction, totalItems, pos);
     }
 
     @SubscribeEvent

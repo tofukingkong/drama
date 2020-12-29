@@ -113,9 +113,10 @@ public class PlayerTracker {
             }
             else if (!data.isAfk && Duration.between(data.lastMove, now).getSeconds() > _afkDelay)
             {
-                data.isAfk = true;
                 data.tracker.write("AFK:ON");
+                trackPlayer(player, true); // track the player on AFK, then not during AFK
                 Drama.LOGGER.info(MessageFormat.format("PlayerTracker.CHECKAFK: Akf enabled for {0}", data.name));
+                data.isAfk = true;
             }
         }
     }
@@ -124,18 +125,34 @@ public class PlayerTracker {
     {
         BlockPos position = player.getPosition();
 
-        String location = player.world.getDimensionKey().getLocation().toString();
-        int pivot = location.indexOf(":");
-        int second = location.indexOf('_', pivot);
-        pivot = second > 0 ? second : pivot;
-        location = location.substring(pivot+1, pivot+4);
+        String location = getDimensionCode(player);
 
         DramaPlayerData data = _playerData.get(player.getUniqueID());
-        if (data != null) {
+        // don't track if unknown or if AFK (since they aren't moving)
+        if (data != null && !data.isAfk) {
             data.tracker.write("LOC:{0}({1},{2},{3})", location, position.getX(), position.getY(), position.getZ());
             if (forceFlush) {
                 data.tracker.flush();
             }
         }
+    }
+
+    public void trackContainerInteraction(ServerPlayerEntity player, String containerType, String interaction, int totalItems, BlockPos pos) {
+        UUID uuid = player.getUniqueID();
+        DramaPlayerData data = _playerData.get(uuid);
+
+        BlockPos position = player.getPosition();
+        String location = getDimensionCode(player);
+        if (data != null) {
+            data.tracker.write("C_{0}.{1}: #{2} {3}({4},{5},{6})", containerType, interaction, totalItems, location, pos.getX(), pos.getY(), pos.getZ());
+        }
+    }
+
+    private String getDimensionCode(ServerPlayerEntity player) {
+        String location = player.world.getDimensionKey().getLocation().toString();
+        int pivot = location.indexOf(":");
+        int second = location.indexOf('_', pivot);
+        pivot = second > 0 ? second : pivot;
+        return location.substring(pivot+1, pivot+4);
     }
 }

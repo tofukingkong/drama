@@ -55,6 +55,9 @@ public class FileManager {
     }
 
     public ManagedFile manageFile(String folder, String coreName, long maxSize) {
+        // basic filename-safe replacement, ignore rare overlap - build a hash for re-entry if we have to or include id
+        coreName = coreName.replaceAll("[^a-zA-Z0-9-_.]", "_");
+
         FileInfo info = new FileInfo();
         try {
             Path path = Paths.get(_root, folder);

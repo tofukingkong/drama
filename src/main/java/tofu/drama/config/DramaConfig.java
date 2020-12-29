@@ -24,7 +24,7 @@ public class DramaConfig {
 				.comment("Duration (seconds) with no movement before a player is considered AFK")
 				.translation("drama.configgui.afk_delay")
 				.worldRestart()
-				.defineInRange("afk_delay", 10, 1, 3600);
+				.defineInRange("afk_delay", 300, 1, 3600);
 
 			builder.pop();
         }

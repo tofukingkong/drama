@@ -65,12 +65,12 @@ public class ModServerEvents {
             Drama._tracker.trySleepOverride();
         }
 
-        if (_tickCount % _flushTick == 0) {
+        if (_tickCount % _chatFlushTick == 0) {
             Drama.CHATLOG.flush();
         }
     }
 
     private static long _tickCount = 0;
     private static final long _sleepTick = 20 * 10; // 10sec
-    private static final long _flushTick = 20 * 10; // 10sec
+    private static final long _chatFlushTick = 20 * 10; // 10sec
 }
