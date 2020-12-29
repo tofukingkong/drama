@@ -16,9 +16,13 @@ import org.spongepowered.asm.mixin.MixinEnvironment;
 import tofu.drama.Drama;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.UUID;
 
 @Mod.EventBusSubscriber(modid = Drama.MOD_ID, bus = Bus.FORGE)
 public class ModPlayerEvents {
+
+    private static final HashMap<UUID, Long> _ticks = new HashMap<>();
 
     public void onEvent(PlayerEvent.NameFormat event) {
         // use command /afk to toggle afk on and off in username?
@@ -75,18 +79,17 @@ public class ModPlayerEvents {
             return;
         }
 
-        _tickCount++;
+        int tickCount = event.player.getServer().getTickCounter();
 
-        if (_tickCount % _trackingTick == 0) {
-            Drama._tracker.trackPlayer((ServerPlayerEntity)event.player, _tickCount % _trackingFlush == 0);
+        if (tickCount % _trackingTick == 0) {
+            Drama._tracker.trackPlayer((ServerPlayerEntity)event.player, tickCount % _trackingFlush == 0);
         }
 
-        if (_tickCount % _afkTick == 0) {
+        if (tickCount % _afkTick == 0) {
             Drama._tracker.updatePlayerAfk((ServerPlayerEntity)event.player);
         }
     }
 
-    private static long _tickCount = 0;
     private static final long _trackingTick = 20 * 20; // 20sec
     private static final long _trackingFlush = 20 * 60; // 60sec
     private static final long _afkTick = 20 * 10; // 10sec
