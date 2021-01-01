@@ -1,0 +1,2 @@
+# Drama
+This is a simple Minecraft 1.16.4 mod. Its intent is to add some basic drama-management functionality to modern 1.16 vanilla minecraft, as most of the mods I've found are either 1.12/earlier, or require some non-vanilla server setup like spigot/paper/etc.  I'm attempting to make this a server-only mod, but I've found you can't have a forge-based server and pure vanilla clients or you lose some things (render of cooldown is gone which makes battle harder, etc).  Hopefully that is just a problem with the forge stable for 1.16.4 and gets resolved.
